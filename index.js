@@ -74,15 +74,9 @@ async function insertUser(name) {
   let finalRes;
   try {
     await client.connect();
-    let isUserExist = await checkUser(name);
-    if (isUserExist) {
-      finalRes = isUserExist;
-    }
-    else {
-      let documentToInsert = { username: name, count: 0, log: []};
-      let result = await usersCollection.insertOne(documentToInsert);
-      finalRes = result.insertedId;
-    }
+    let documentToInsert = { username: name, count: 0, log: []};
+    let result = await usersCollection.insertOne(documentToInsert);
+    finalRes = result.insertedId;
   }
   catch (error) {
     console.error(error);
@@ -90,17 +84,6 @@ async function insertUser(name) {
   finally {
     await client.close();
     return finalRes;
-  }
-}
-
-async function checkUser(name) {
-  try {
-    let result = await usersCollection.findOne({ username: name });
-    if (result) return result._id;
-    else return false;
-  }
-  catch (err) {
-    console.log(err);
   }
 }
 
@@ -146,8 +129,8 @@ async function findUserByIdAndUpdate(id, dur, des, date){
     let updateDoc = {
       $inc: {count : 1},
       $push: {log: {
-        duration: dur,
         description: des,
+        duration: dur,
         date: date
       }}
     };
