@@ -53,8 +53,10 @@ app.post("/api/users/:_id/exercises", async function(req, res){
 
 app.get("/api/users/:_id/logs", async function(req, res){
   let {from, to, limit} = req.query;
-  from = new Date(from);
-  to = new Date(to);
+  if(!isNaN(Number(from))) from = new Date(Number(from));
+  else from = new Date(from);
+  if(!isNaN(Number(to))) to = new Date(Number(to));
+  else to = new Date(to);
   limit = Number(limit);
   let {_id} = req.params;
   let {username, log} = await getUserLogs(_id,from,to,limit);
