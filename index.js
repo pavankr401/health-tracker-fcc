@@ -76,7 +76,6 @@ app.get("/api/users/:_id/logs", function(req, res){
 })
 
 
-
 const usersCollection = client.db("exercise_tracker").collection("users");
 
 async function connectToDB(){
@@ -87,7 +86,6 @@ async function connectToDB(){
     console.log(err);
   }
 }
-connectToDB();
 
 async function insertUser(name) {
   let finalRes;
