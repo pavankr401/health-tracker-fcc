@@ -32,11 +32,11 @@ app.get("/api/users", async function (req, res) {
 
 app.post("/api/users/:_id/exercises", async function (req, res) {
   let { description, duration, date } = req.body;
+  // console.log(date);
   duration = Number(duration);
   const { _id } = req.params;
 
-  if (date == "") date = new Date();
-  else if (/^ +$/.test(date)) return res.send("invalid date");
+  if(date == undefined) date = new Date();
   else date = new Date(date);
 
   let username = await checkUserById(_id);
@@ -50,41 +50,50 @@ app.post("/api/users/:_id/exercises", async function (req, res) {
   }
 })
 
-app.get("/api/users/:_id/logs", async function(req, res){
+app.get("/api/users/:_id/logs", function(req, res){
   const {_id} = req.params;
   let {from, to, limit} = req.query;
 
-  if(_id.length != 24) res.send("invalid id");
+  if(_id.length != 24){
+    return res.send("invalid id");
+  }
 
   from = new Date(from);
   to = new Date(to);
   limit = Number(limit);
 
-  let result = await getLogs(_id, from, to, limit);
-
-  
-  if(result && (from == "Invalid Date" || to == "Invalid Date")){
-    let {username, log} = result;
-    res.send({username: username, count: log.length, _id: _id, log: log});
-  }
-  else if(result && from != "Invalid Date" && to != "Invalid Date"){
-    let {username, log} = result;
-    res.send({username: username, count: log.length, _id: _id, from: from.toDateString(), to: to.toDateString(), log: log});
-  }
-  else{
-    res.send("invalid user")
-  }
+  getLogs(_id, from, to, limit).then(({username, log}) => {
+    if(username != undefined && (from == "Invalid Date" || to == "Invalid Date")){
+      res.send({username: username, count: log.length, _id: _id, log: log});
+    }
+    else if(username != undefined && from != "Invalid Date" && to != "Invalid Date"){
+      res.send({username: username, count: log.length, _id: _id, from: from.toDateString(), to: to.toDateString(), log: log});
+    }
+    else{
+      res.send("invalid user")
+    }
+  })
 })
 
 
 
 const usersCollection = client.db("exercise_tracker").collection("users");
 
+async function connectToDB(){
+  try{
+    await client.connect();
+  }
+  catch(err){
+    console.log(err);
+  }
+}
+connectToDB();
+
 async function insertUser(name) {
   let finalRes;
   try {
-    await client.connect();
-    let documentToInsert = { username: name, count: 0, log: [] };
+    await connectToDB();
+    let documentToInsert = { username: name, log: [] };
     let result = await usersCollection.insertOne(documentToInsert);
     finalRes = result.insertedId;
   }
@@ -92,7 +101,7 @@ async function insertUser(name) {
     console.error(error);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -100,14 +109,14 @@ async function insertUser(name) {
 async function getAllUsers() {
   let finalRes;
   try {
-    await client.connect();
+    await connectToDB();
     finalRes = await usersCollection.find({}, { projection: { username: 1 } }).toArray();
   }
   catch (err) {
     console.error(err);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -115,7 +124,7 @@ async function getAllUsers() {
 async function checkUserById(id) {
   let finalRes;
   try {
-    await client.connect();
+    await connectToDB();
     let filterDoc = { _id: new ObjectId(id) };
     let result = await usersCollection.findOne(filterDoc);
     if (result) finalRes = result.username;
@@ -134,10 +143,9 @@ async function checkUserById(id) {
 async function findUserByIdAndUpdate(id, dur, des, date) {
   let finalRes;
   try {
-    await client.connect();
+    await connectToDB();
     let filterDoc = { _id: new ObjectId(id) };
     let updateDoc = {
-      $inc: { count: 1 },
       $push: {
         log: {
           description: des,
@@ -159,7 +167,7 @@ async function findUserByIdAndUpdate(id, dur, des, date) {
     console.log(error);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -167,9 +175,9 @@ async function findUserByIdAndUpdate(id, dur, des, date) {
 async function getLogs(id, from, to, limit){
   let finalRes;
   try{
-    await client.connect();
+    await connectToDB();
     let filterDoc = {_id: new ObjectId(id)};
-    let options = {projection: {username: 1, log: 1, _id: 0}};
+    let options = {projection: {username: 1, log: 1, _id: 0}, returnDocument: 'after'};
     let result = await usersCollection.findOne(filterDoc, options);
 
     result.log.sort((a,b) => {
@@ -191,12 +199,12 @@ async function getLogs(id, from, to, limit){
     }
 
     if(result) finalRes = result;
-    else finalRes = false;
+    else finalRes = {username: undefined, log: undefined};
 
   }
   catch(err) {console.error(err)}
   finally{
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
