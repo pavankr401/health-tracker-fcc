@@ -99,7 +99,7 @@ async function insertUser(name) {
     console.error(error);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -114,7 +114,7 @@ async function getAllUsers() {
     console.error(err);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -133,7 +133,7 @@ async function checkUserById(id) {
     console.log(error);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -165,7 +165,7 @@ async function findUserByIdAndUpdate(id, dur, des, date) {
     console.log(error);
   }
   finally {
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
@@ -202,7 +202,7 @@ async function getLogs(id, from, to, limit){
   }
   catch(err) {console.error(err)}
   finally{
-    await client.close();
+    // await client.close();
     return finalRes;
   }
 }
